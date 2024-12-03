@@ -19,18 +19,18 @@ def get_version(rel_path: str) -> str:
 
 
 setup(
-    name='chris-plugin-template',
-    version=get_version('app.py'),
-    description='A ChRIS DS plugin template',
+    name='pacs_retrieve',
+    version=get_version('pacs_retrieve.py'),
+    description='A plugin to retrieve DICOM images from a remote PACS using pfdcm',
     author='FNNDSC',
     author_email='dev@babyMRI.org',
-    url='https://github.com/FNNDSC/python-chrisapp-template',
-    py_modules=['app'],
+    url='https://github.com/FNNDSC/pl-pacs_retr',
+    py_modules=['pacs_retrieve','pfdcm'],
     install_requires=['chris_plugin'],
     license='MIT',
     entry_points={
         'console_scripts': [
-            'commandname = app:main'
+            'pacs_retrieve = pacs_retrieve:main'
         ]
     },
     classifiers=[
