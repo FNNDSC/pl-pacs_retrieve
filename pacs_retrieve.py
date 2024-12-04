@@ -9,6 +9,7 @@ import pfdcm
 import json
 import sys
 import pprint
+import os
 
 LOG = logger.debug
 
@@ -22,7 +23,7 @@ logger_format = (
 )
 logger.remove()
 logger.add(sys.stderr, format=logger_format)
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 DISPLAY_TITLE = r"""
        _                                        _        _                
@@ -90,9 +91,14 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
 
     directive = json.loads(options.PACSdirective)
 
-    search_response = pfdcm.retrieve_pacsfiles(directive, options.PACSurl, options.PACSname)
+    retrieve_response = pfdcm.retrieve_pacsfiles(directive, options.PACSurl, options.PACSname)
 
-    LOG(f"response: {pprint.pformat(search_response)}")
+    LOG(f"response: {pprint.pformat(retrieve_response)}")
+    op_json_file_path = os.path.join(options.outputdir, "retrieve_response.json")
+    # Open a json writer, and use the json.dumps()
+    # function to dump data
+    with open(op_json_file_path, 'w', encoding='utf-8') as jsonf:
+        jsonf.write(json.dumps(retrieve_response, indent=4))
 
 
 if __name__ == '__main__':
