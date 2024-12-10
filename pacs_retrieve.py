@@ -23,7 +23,7 @@ logger_format = (
 )
 logger.remove()
 logger.add(sys.stderr, format=logger_format)
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 DISPLAY_TITLE = r"""
        _                                        _        _                
@@ -37,9 +37,7 @@ DISPLAY_TITLE = r"""
 """
 
 
-parser = ArgumentParser(description='!!!CHANGE ME!!! An example ChRIS plugin which '
-                                    'counts the number of occurrences of a given '
-                                    'word in text files.',
+parser = ArgumentParser(description='A plugin to retrieve DICOM images from a remote PACS using pfdcm',
                         formatter_class=ArgumentDefaultsHelpFormatter)
 
 parser.add_argument(
@@ -55,10 +53,16 @@ parser.add_argument(
     help='name of the PACS'
 )
 parser.add_argument(
-    '--PACSdirective',
+    '--inputJSONfile',
     default='',
     type=str,
-    help='directive to query the PACS'
+    help='JSON file containing DICOM data to be retrieved'
+)
+parser.add_argument(
+    '--copyInputFile',
+    default=False,
+    action="store_true",
+    help='If specified, copy input JSON to output dir'
 )
 parser.add_argument('-V', '--version', action='version',
                     version=f'%(prog)s {__version__}')
@@ -89,16 +93,25 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
 
     print(DISPLAY_TITLE)
 
-    directive = json.loads(options.PACSdirective)
+    mapper = PathMapper.file_mapper(inputdir, outputdir, glob=options.inputJSONfile)
+    for input_file, output_file in mapper:
+        if options.copyInputFile:
+            output_file.write_text(input_file.read_text())
+        # Open and read the JSON file
+        with open(input_file, 'r') as file:
+            data = json.load(file)
+            for series in data:
+                directive = {}
+                directive["SeriesInstanceUID"] = series["SeriesInstanceUID"]
+                directive["StudyInstanceUID"] = series["StudyInstanceUID"]
+                retrieve_response = pfdcm.retrieve_pacsfiles(directive, options.PACSurl, options.PACSname)
 
-    retrieve_response = pfdcm.retrieve_pacsfiles(directive, options.PACSurl, options.PACSname)
-
-    LOG(f"response: {pprint.pformat(retrieve_response)}")
-    op_json_file_path = os.path.join(options.outputdir, "retrieve_response.json")
-    # Open a json writer, and use the json.dumps()
-    # function to dump data
-    with open(op_json_file_path, 'w', encoding='utf-8') as jsonf:
-        jsonf.write(json.dumps(retrieve_response, indent=4))
+                LOG(f"response: {pprint.pformat(retrieve_response)}")
+                op_json_file_path = os.path.join(options.outputdir, f"{series["SeriesInstanceUID"]}_retrieve.json")
+                # Open a json writer, and use the json.dumps()
+                # function to dump data
+                with open(op_json_file_path, 'w', encoding='utf-8') as jsonf:
+                    jsonf.write(json.dumps(retrieve_response, indent=4))
 
 
 if __name__ == '__main__':
