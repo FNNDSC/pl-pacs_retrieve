@@ -56,7 +56,7 @@ parser.add_argument(
     '--inputJSONfile',
     default='',
     type=str,
-    help='JSON file containing DICOM data to be retrieved'
+    help='name of the JSON file containing DICOM data to be retrieved'
 )
 parser.add_argument(
     '--copyInputFile',
@@ -97,7 +97,7 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
     :param outputdir: directory where to write output files
     """
 
-    print(DISPLAY_TITLE)
+    LOG(DISPLAY_TITLE)
 
     mapper = PathMapper.file_mapper(inputdir, outputdir, glob=options.inputJSONfile)
     for input_file, output_file in mapper:
