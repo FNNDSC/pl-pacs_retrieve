@@ -23,7 +23,7 @@ logger_format = (
 )
 logger.remove()
 logger.add(sys.stderr, format=logger_format)
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 DISPLAY_TITLE = r"""
        _                                        _        _                
@@ -64,6 +64,12 @@ parser.add_argument(
     action="store_true",
     help='If specified, copy input JSON to output dir'
 )
+parser.add_argument(
+    '--retrieveStudy',
+    default=False,
+    action="store_true",
+    help='If specified, retrieve the entire study'
+)
 parser.add_argument('-V', '--version', action='version',
                     version=f'%(prog)s {__version__}')
 
@@ -100,18 +106,27 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
         # Open and read the JSON file
         with open(input_file, 'r') as file:
             data = json.load(file)
-            for series in data:
-                directive = {}
-                directive["SeriesInstanceUID"] = series["SeriesInstanceUID"]
-                directive["StudyInstanceUID"] = series["StudyInstanceUID"]
+            directive = {}
+            op_json_file_path = ""
+            if options.retrieveStudy:
+                directive["AccessionNumber"] = data[0]["AccessionNumber"]
                 retrieve_response = pfdcm.retrieve_pacsfiles(directive, options.PACSurl, options.PACSname)
 
                 LOG(f"response: {pprint.pformat(retrieve_response)}")
-                op_json_file_path = os.path.join(options.outputdir, f"{series["SeriesInstanceUID"]}_retrieve.json")
-                # Open a json writer, and use the json.dumps()
-                # function to dump data
-                with open(op_json_file_path, 'w', encoding='utf-8') as jsonf:
-                    jsonf.write(json.dumps(retrieve_response, indent=4))
+                op_json_file_path = os.path.join(options.outputdir, f"{series["AccessionNumber"]}_retrieve.json")
+            else:
+
+                for series in data:
+                    directive["SeriesInstanceUID"] = series["SeriesInstanceUID"]
+                    directive["StudyInstanceUID"] = series["StudyInstanceUID"]
+                    retrieve_response = pfdcm.retrieve_pacsfiles(directive, options.PACSurl, options.PACSname)
+
+                    LOG(f"response: {pprint.pformat(retrieve_response)}")
+                    op_json_file_path = os.path.join(options.outputdir, f"{series["SeriesInstanceUID"]}_retrieve.json")
+            # Open a json writer, and use the json.dumps()
+            # function to dump data
+            with open(op_json_file_path, 'w', encoding='utf-8') as jsonf:
+                jsonf.write(json.dumps(retrieve_response, indent=4))
 
 
 if __name__ == '__main__':
