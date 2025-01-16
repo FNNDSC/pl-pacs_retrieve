@@ -23,7 +23,7 @@ logger_format = (
 )
 logger.remove()
 logger.add(sys.stderr, format=logger_format)
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 DISPLAY_TITLE = r"""
        _                                        _        _                
@@ -113,7 +113,7 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
                 retrieve_response = pfdcm.retrieve_pacsfiles(directive, options.PACSurl, options.PACSname)
 
                 LOG(f"response: {pprint.pformat(retrieve_response)}")
-                op_json_file_path = os.path.join(options.outputdir, f"{series["AccessionNumber"]}_retrieve.json")
+                op_json_file_path = os.path.join(options.outputdir, f"{data[0]["AccessionNumber"]}_retrieve.json")
             else:
 
                 for series in data:
