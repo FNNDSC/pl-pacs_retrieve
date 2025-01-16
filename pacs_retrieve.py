@@ -23,7 +23,7 @@ logger_format = (
 )
 logger.remove()
 logger.add(sys.stderr, format=logger_format)
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
 DISPLAY_TITLE = r"""
        _                                        _        _                
@@ -114,6 +114,12 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
 
                 LOG(f"response: {pprint.pformat(retrieve_response)}")
                 op_json_file_path = os.path.join(options.outputdir, f"{data[0]["AccessionNumber"]}_retrieve.json")
+                for series in data:
+                    retrieve_response["PACSdirective"]["SeriesInstanceUID"] = series["SeriesInstanceUID"]
+                    retrieve_response["PACSdirective"]["StudyInstanceUID"] = series["StudyInstanceUID"]
+                    srs_json_file_path = os.path.join(options.outputdir, f"{series["SeriesInstanceUID"]}_retrieve.json")
+                    with open(srs_json_file_path, 'w', encoding='utf-8') as jsonf:
+                        jsonf.write(json.dumps(retrieve_response, indent=4))
             else:
 
                 for series in data:
