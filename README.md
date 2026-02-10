@@ -5,12 +5,21 @@
 [![ci](https://github.com/FNNDSC/pl-pacs_retrieve/actions/workflows/ci.yml/badge.svg)](https://github.com/FNNDSC/pl-pacs_retrieve/actions/workflows/ci.yml)
 
 `pl-pacs_retrieve` is a [_ChRIS_](https://chrisproject.org/)
-_ds_ plugin which takes in ...  as input files and
-creates ... as output files.
+_ds_ plugin that retrieves DICOM images from a remote PACS using
+[`pfdcm`](https://github.com/FNNDSC/pfdcm).  
+It consumes a JSON file describing DICOM studies or series and retrieves
+the corresponding DICOM files into the output directory.
 
 ## Abstract
 
-...
+Medical imaging workflows often require programmatic retrieval of DICOM
+data from a PACS.  
+`pl-pacs_retrieve` enables automated PACS retrieval within a *ChRIS*
+pipeline by consuming a JSON description of studies or series and
+fetching the associated DICOM files via `pfdcm`.
+
+The plugin supports retrieving individual series defined in a JSON file
+or optionally retrieving an entire study.
 
 ## Installation
 

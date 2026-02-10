@@ -2,7 +2,6 @@
 
 from pathlib import Path
 from argparse import ArgumentParser, Namespace, ArgumentDefaultsHelpFormatter
-from pflog import pflog
 from loguru import logger
 from chris_plugin import chris_plugin, PathMapper
 import pfdcm
@@ -10,6 +9,7 @@ import json
 import sys
 import pprint
 import os
+from typing import Set
 
 LOG = logger.debug
 
@@ -23,7 +23,7 @@ logger_format = (
 )
 logger.remove()
 logger.add(sys.stderr, format=logger_format)
-__version__ = '1.0.5'
+__version__ = '1.0.6'
 
 DISPLAY_TITLE = r"""
        _                                        _        _                
@@ -107,19 +107,24 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
         with open(input_file, 'r') as file:
             data = json.load(file)
             directive = {}
-            op_json_file_path = ""
             if options.retrieveStudy:
-                directive["AccessionNumber"] = data[0]["AccessionNumber"]
-                retrieve_response = pfdcm.retrieve_pacsfiles(directive, options.PACSurl, options.PACSname)
+                acc_no_list = get_acc_nos_from_data(data)
+                for acc_no in acc_no_list:
+                    directive["AccessionNumber"] = acc_no
+                    retrieve_response = pfdcm.retrieve_pacsfiles(directive, options.PACSurl, options.PACSname)
 
-                LOG(f"response: {pprint.pformat(retrieve_response)}")
-                op_json_file_path = os.path.join(options.outputdir, f"{data[0]["AccessionNumber"]}_retrieve.json")
-                for series in data:
-                    retrieve_response["PACSdirective"]["SeriesInstanceUID"] = series["SeriesInstanceUID"]
-                    retrieve_response["PACSdirective"]["StudyInstanceUID"] = series["StudyInstanceUID"]
-                    srs_json_file_path = os.path.join(options.outputdir, f"{series["SeriesInstanceUID"]}_retrieve.json")
-                    with open(srs_json_file_path, 'w', encoding='utf-8') as jsonf:
+                    LOG(f"response: {pprint.pformat(retrieve_response)}")
+                    op_json_file_path = os.path.join(options.outputdir, f"{acc_no}_retrieve.json")
+                    with open(op_json_file_path, 'w', encoding='utf-8') as jsonf:
                         jsonf.write(json.dumps(retrieve_response, indent=4))
+
+                    for series in data:
+                        retrieve_response["PACSdirective"]["SeriesInstanceUID"] = series["SeriesInstanceUID"]
+                        retrieve_response["PACSdirective"]["StudyInstanceUID"] = series["StudyInstanceUID"]
+                        srs_json_file_path = os.path.join(options.outputdir,
+                                                          f"{series["SeriesInstanceUID"]}_retrieve.json")
+                        with open(srs_json_file_path, 'w', encoding='utf-8') as jsonf:
+                            jsonf.write(json.dumps(retrieve_response, indent=4))
             else:
 
                 for series in data:
@@ -128,11 +133,19 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
                     retrieve_response = pfdcm.retrieve_pacsfiles(directive, options.PACSurl, options.PACSname)
 
                     LOG(f"response: {pprint.pformat(retrieve_response)}")
-                    op_json_file_path = os.path.join(options.outputdir, f"{series["SeriesInstanceUID"]}_retrieve.json")
-            # Open a json writer, and use the json.dumps()
-            # function to dump data
-            with open(op_json_file_path, 'w', encoding='utf-8') as jsonf:
-                jsonf.write(json.dumps(retrieve_response, indent=4))
+                    srs_json_file_path = os.path.join(options.outputdir, f"{series["SeriesInstanceUID"]}_retrieve.json")
+                    with open(srs_json_file_path, 'w', encoding='utf-8') as jsonf:
+                        jsonf.write(json.dumps(retrieve_response, indent=4))
+
+
+def get_acc_nos_from_data(data: dict) -> Set[str]:
+    unique_accession_numbers = set()
+
+    for series in data:
+        unique_accession_numbers.add(series["AccessionNumber"])
+
+    return unique_accession_numbers
+
 
 
 if __name__ == '__main__':
